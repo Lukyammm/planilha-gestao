@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestão de Indicadores</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Material+Symbols+Rounded:FILL@0..1" rel="stylesheet">
   <style>
     :root{
       --bg:#eef3f7;
@@ -23,7 +26,7 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0;background:linear-gradient(180deg,#eef4f8 0%, #e8f0f5 100%);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+    body{margin:0;background:linear-gradient(180deg,#eef4f8 0%, #e8f0f5 100%);color:var(--text);font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
     .layout{min-height:100vh;display:grid;grid-template-columns:280px 1fr;gap:18px;padding:18px}
     .sidebar{background:linear-gradient(180deg,#0a5f90 0%, #084d75 100%);color:#fff;border-radius:24px;box-shadow:var(--shadow);padding:20px 16px;display:flex;flex-direction:column;position:sticky;top:18px;height:calc(100vh - 36px)}
     .brand{display:flex;align-items:center;gap:12px;padding:6px 8px 18px;border-bottom:1px solid rgba(255,255,255,.14);margin-bottom:18px}
@@ -34,7 +37,7 @@
     .nav-btn{width:100%;border:none;text-align:left;padding:13px 14px;border-radius:14px;cursor:pointer;background:transparent;color:#fff;display:flex;align-items:center;gap:10px;font-weight:700;transition:.18s ease}
     .nav-btn:hover{background:rgba(255,255,255,.08)}
     .nav-btn.active{background:#fff;color:var(--primary);box-shadow:0 8px 18px rgba(0,0,0,.10)}
-    .nav-icon{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,.12);flex:0 0 30px;font-size:13px}
+    .nav-icon{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,.12);flex:0 0 30px}.nav-icon .material-symbols-rounded{font-size:18px;line-height:1}
     .nav-btn.active .nav-icon{background:#eaf5fb}
     .sidebar-footer{margin-top:auto;border-top:1px solid rgba(255,255,255,.14);padding:16px 8px 0;font-size:12px;line-height:1.5;color:rgba(255,255,255,.82)}
     .main{min-width:0;display:flex;flex-direction:column;gap:18px}
@@ -48,8 +51,10 @@
     .btn-primary{background:#fff;color:var(--primary)}
     .btn-secondary{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.18)}
     .btn-fill{background:linear-gradient(180deg,var(--primary) 0%, #0b6ea8 100%);color:#fff}
+    .material-symbols-rounded{font-variation-settings:"FILL" 1,"wght" 500,"GRAD" 0,"opsz" 24}
+    .icon{font-family:"Material Symbols Rounded";font-size:18px;line-height:1;vertical-align:middle;font-variation-settings:"FILL" 1,"wght" 500,"GRAD" 0,"opsz" 24}
     .topbar-strip{background:#f7fbfe;border-top:1px solid #d5e6f2;padding:12px 18px;display:flex;gap:8px;flex-wrap:wrap}
-    .pill{padding:7px 10px;border-radius:999px;background:#eaf5fb;border:1px solid #d4e8f4;color:#0c5f91;font-size:12px;font-weight:700}
+    .pill{padding:7px 10px;border-radius:999px;background:#eaf5fb;border:1px solid #d4e8f4;color:#0c5f91;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px}.pill .icon{font-size:15px}
     .panel{display:none}.panel.active{display:block}
     .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
     .card{grid-column:span 12;background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
@@ -110,11 +115,11 @@
       </div>
 
       <nav class="nav">
-        <button class="nav-btn active" data-tab="dashboard"><span class="nav-icon">1</span>Dashboard</button>
-        <button class="nav-btn" data-tab="indicadores"><span class="nav-icon">2</span>Indicadores</button>
-        <button class="nav-btn" data-tab="lancamentos"><span class="nav-icon">3</span>Lançamentos</button>
-        <button class="nav-btn" data-tab="acoes"><span class="nav-icon">4</span>Plano de ação</button>
-        <button class="nav-btn" data-tab="base"><span class="nav-icon">5</span>Estrutura</button>
+        <button class="nav-btn active" data-tab="dashboard"><span class="nav-icon"><span class="material-symbols-rounded">monitoring</span></span>Dashboard</button>
+        <button class="nav-btn" data-tab="indicadores"><span class="nav-icon"><span class="material-symbols-rounded">target</span></span>Indicadores</button>
+        <button class="nav-btn" data-tab="lancamentos"><span class="nav-icon"><span class="material-symbols-rounded">edit_note</span></span>Lançamentos</button>
+        <button class="nav-btn" data-tab="acoes"><span class="nav-icon"><span class="material-symbols-rounded">task_alt</span></span>Plano de ação</button>
+        <button class="nav-btn" data-tab="base"><span class="nav-icon"><span class="material-symbols-rounded">database</span></span>Estrutura</button>
       </nav>
 
       <div class="sidebar-footer">
@@ -130,15 +135,15 @@
             <p>Cadastro, lançamentos mensais, acompanhamento gráfico e plano de ação em uma única interface.</p>
           </div>
           <div class="topbar-actions">
-            <button class="btn btn-primary" id="btnSetup">Criar estrutura automática</button>
-            <button class="btn btn-secondary" id="btnReload">Atualizar dados</button>
+            <button class="btn btn-primary" id="btnSetup"><span class="icon">auto_fix_high</span> Criar estrutura automática</button>
+            <button class="btn btn-secondary" id="btnReload"><span class="icon">refresh</span> Atualizar dados</button>
           </div>
         </div>
         <div class="topbar-strip">
-          <span class="pill">Indicadores</span>
-          <span class="pill">Base histórica</span>
-          <span class="pill">Comparativo anual</span>
-          <span class="pill">Plano de ação</span>
+          <span class="pill"><span class="icon">target</span> Indicadores</span>
+          <span class="pill"><span class="icon">query_stats</span> Base histórica</span>
+          <span class="pill"><span class="icon">bar_chart</span> Comparativo anual</span>
+          <span class="pill"><span class="icon">checklist</span> Plano de ação</span>
         </div>
       </section>
 
