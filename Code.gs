@@ -178,38 +178,32 @@ function saveActionPlan(payload) {
   const ano = toInt_(payload.ano);
   const mes = toInt_(payload.mes);
   const resultadoRef = toNumber_(payload.resultadoRef);
-  const fato = sanitizeText_(payload.fato);
-  const causa = sanitizeText_(payload.causa);
-  const acoes = sanitizeText_(payload.acoes);
-  const responsavel = sanitizeText_(payload.responsavel);
-  const status = sanitizeText_(payload.status) || 'PENDENTE';
+  const items = Array.isArray(payload.items) ? payload.items : [];
 
   if (!indicadorId) throw new Error('Selecione um indicador.');
   if (!ano || ano < 2000 || ano > 2100) throw new Error('Ano inválido.');
   if (!mes || mes < 1 || mes > 12) throw new Error('Mês inválido.');
 
   const sh = getSheet_(APP.SHEETS.PLANO_ACAO);
-  const data = sh.getDataRange().getValues();
+  ensureActionPlanSchema_(sh);
 
-  let foundRow = null;
-  for (let i = 1; i < data.length; i++) {
+  const data = sh.getDataRange().getValues();
+  for (let i = data.length - 1; i >= 1; i--) {
     if (String(data[i][1]) === String(indicadorId) && Number(data[i][2]) === ano && Number(data[i][3]) === mes) {
-      foundRow = i + 1;
-      break;
+      sh.deleteRow(i + 1);
     }
   }
 
-  if (foundRow) {
-    sh.getRange(foundRow, 5, 1, 7).setValues([[
-      resultadoRef,
-      fato,
-      causa,
-      acoes,
-      responsavel,
-      status,
-      new Date()
-    ]]);
-  } else {
+  items.forEach(item => {
+    const fato = sanitizeText_(item.fato);
+    const causa = sanitizeText_(item.causa);
+    const acoes = sanitizeText_(item.acoes);
+    const responsavel = sanitizeText_(item.responsavel);
+    const status = sanitizeText_(item.status) || 'PENDENTE';
+    const prazo = sanitizeText_(item.prazo);
+
+    if (!fato && !causa && !acoes && !responsavel && !prazo) return;
+
     const id = getNextId_('NEXT_ACTION_ID');
     sh.appendRow([
       id,
@@ -222,10 +216,11 @@ function saveActionPlan(payload) {
       acoes,
       responsavel,
       status,
+      prazo,
       new Date(),
       new Date()
     ]);
-  }
+  });
 
   return 'Plano de ação salvo com sucesso.';
 }
@@ -320,13 +315,13 @@ function createActionPlanSheet_(ss) {
   let sh = ss.getSheetByName(APP.SHEETS.PLANO_ACAO);
   if (!sh) sh = ss.insertSheet(APP.SHEETS.PLANO_ACAO);
   sh.clear();
-  sh.getRange(1, 1, 1, 12).setValues([[
+  sh.getRange(1, 1, 1, 13).setValues([[
     'ID', 'INDICADOR_ID', 'ANO', 'MES', 'RESULTADO_REF', 'FATO', 'CAUSA',
-    'ACOES', 'RESPONSAVEL', 'STATUS', 'CREATED_AT', 'UPDATED_AT'
+    'ACOES', 'RESPONSAVEL', 'STATUS', 'PRAZO', 'CREATED_AT', 'UPDATED_AT'
   ]]);
-  styleHeader_(sh, 1, 12);
+  styleHeader_(sh, 1, 13);
   sh.setFrozenRows(1);
-  sh.setColumnWidths(1, 12, 170);
+  sh.setColumnWidths(1, 13, 170);
 }
 
 function styleHeader_(sheet, row, numCols) {
@@ -389,6 +384,7 @@ function getHistory_() {
 
 function getActionPlans_() {
   const sh = getSheet_(APP.SHEETS.PLANO_ACAO);
+  ensureActionPlanSchema_(sh);
   const data = sh.getDataRange().getValues();
   return data.slice(1).filter(r => r[0] !== '').map(r => ({
     id: r[0],
@@ -400,8 +396,65 @@ function getActionPlans_() {
     causa: r[6],
     acoes: r[7],
     responsavel: r[8],
-    status: r[9]
+    status: r[9],
+    prazo: formatDateIso_(r[10])
   }));
+}
+
+function getActionPlanByPeriod(indicatorId, year, month) {
+  ensureSystemReady_();
+
+  const indicadorId = sanitizeText_(indicatorId);
+  const ano = toInt_(year);
+  const mes = toInt_(month);
+
+  if (!indicadorId) throw new Error('Selecione um indicador.');
+  if (!ano || ano < 2000 || ano > 2100) throw new Error('Ano inválido.');
+  if (!mes || mes < 1 || mes > 12) throw new Error('Mês inválido.');
+
+  const rows = getActionPlans_().filter(r =>
+    String(r.indicadorId) === String(indicadorId) && Number(r.ano) === ano && Number(r.mes) === mes
+  );
+
+  return {
+    indicadorId,
+    ano,
+    mes,
+    resultadoRef: rows.length ? rows[0].resultadoRef : null,
+    items: rows.map(r => ({
+      fato: r.fato || '',
+      causa: r.causa || '',
+      acoes: r.acoes || '',
+      responsavel: r.responsavel || '',
+      status: r.status || 'PENDENTE',
+      prazo: r.prazo || ''
+    }))
+  };
+}
+
+function ensureActionPlanSchema_(sheet) {
+  const sh = sheet || getSheet_(APP.SHEETS.PLANO_ACAO);
+  const lastCol = sh.getLastColumn();
+  if (lastCol >= 13) return;
+
+  if (lastCol === 12) {
+    sh.insertColumnAfter(10);
+    sh.getRange(1, 11).setValue('PRAZO');
+    sh.getRange(1, 12).setValue('CREATED_AT');
+    sh.getRange(1, 13).setValue('UPDATED_AT');
+    styleHeader_(sh, 1, 13);
+    sh.setColumnWidth(11, 170);
+  }
+}
+
+function formatDateIso_(value) {
+  if (!value) return '';
+  if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value.getTime())) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+  const txt = String(value).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(txt)) return txt;
+  return '';
 }
 
 function getSheet_(name) {
