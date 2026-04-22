@@ -96,6 +96,10 @@
     .toast-text{font-size:13px;color:var(--muted);line-height:1.45}
     @keyframes toastIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
     canvas{width:100% !important;max-height:340px}
+    .acao-input{width:100%;padding:9px 10px;border-radius:10px;border:1px solid var(--line-strong);background:#fff;color:var(--text);font:inherit}
+    .acao-input:disabled{background:#f3f6f8;color:#6e808f}
+    .acao-remove{border:none;background:#ffe4e4;color:#b84a4a;padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:700}
+    .acao-remove:disabled{opacity:.5;cursor:not-allowed}
     @media (max-width:1180px){.layout{grid-template-columns:1fr}.sidebar{position:relative;top:0;height:auto}}
     @media (max-width:1040px){.kpis{grid-template-columns:repeat(2,1fr)}.span-8,.span-6,.span-4{grid-column:span 12}.field.span-6,.field.span-4,.field.span-3,.field.span-2{grid-column:span 12}.topbar-head{flex-direction:column}.topbar-actions{justify-content:flex-start}}
     @media (max-width:680px){.layout{padding:12px}.kpis{grid-template-columns:1fr}.sidebar,.topbar,.card{border-radius:18px}}
@@ -305,31 +309,47 @@
 
       <section class="panel" id="panel-acoes">
         <div class="grid">
-          <div class="card span-6">
-            <div class="card-head"><div><h2>Plano de ação</h2><small>Registro de tratativas</small></div></div>
+          <div class="card span-12">
+            <div class="card-head"><div><h2>Plano de ação</h2><small>Modo edição e visualização por mês/ano</small></div></div>
             <div class="card-body">
               <form id="formAcao" class="field-grid">
-                <div class="field span-6"><label>Indicador</label><select id="acaoIndicador" required></select></div>
-                <div class="field span-3"><label>Ano</label><input type="number" id="acaoAno" required></div>
-                <div class="field span-3"><label>Mês</label><select id="acaoMes" required></select></div>
-                <div class="field span-3"><label>Resultado de referência</label><input type="number" step="0.0001" id="acaoResultado"></div>
-                <div class="field span-3"><label>Status</label><select id="acaoStatus"><option value="ANDAMENTO">ANDAMENTO</option><option value="CONCLUIDO">CONCLUIDO</option><option value="PENDENTE">PENDENTE</option></select></div>
-                <div class="field"><label>Fato</label><textarea id="acaoFato"></textarea></div>
-                <div class="field"><label>Causa</label><textarea id="acaoCausa"></textarea></div>
-                <div class="field"><label>Ações</label><textarea id="acaoAcoes"></textarea></div>
-                <div class="field span-6"><label>Responsável</label><input type="text" id="acaoResponsavel"></div>
-                <div class="field span-6"><label>&nbsp;</label><button class="btn btn-fill" type="submit">Salvar plano de ação</button></div>
+                <div class="field span-8"><label>Indicador</label><select id="acaoIndicador" required></select></div>
+                <div class="field span-4"><label>Modo</label><select id="acaoModo"><option value="edicao">Edição</option><option value="visualizacao">Visualização</option></select></div>
+
+                <div class="field">
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Mês / Ano</th>
+                          <th>Resultado</th>
+                          <th>Fato (o que aconteceu?)</th>
+                          <th>Causa</th>
+                          <th>Ações (o que faremos para melhorar?)</th>
+                          <th>Responsável</th>
+                          <th>Status</th>
+                          <th>Prazo</th>
+                          <th>Ação</th>
+                        </tr>
+                      </thead>
+                      <tbody id="acaoLinhas"><tr><td colspan="9" class="loading">Carregando...</td></tr></tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div class="field span-3"><button class="btn btn-secondary" id="btnAddLinhaAcao" type="button">+ Adicionar linha</button></div>
+                <div class="field span-3"><button class="btn btn-fill" type="submit">Salvar plano de ação</button></div>
               </form>
             </div>
           </div>
 
-          <div class="card span-6">
+          <div class="card span-12">
             <div class="card-head"><div><h2>Planos registrados</h2><small>Base de acompanhamento</small></div></div>
             <div class="card-body">
               <div class="table-wrap">
                 <table>
-                  <thead><tr><th>Indicador</th><th>Mês/Ano</th><th>Resultado</th><th>Status</th><th>Responsável</th><th>Ações</th></tr></thead>
-                  <tbody id="tableAcoes"><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
+                  <thead><tr><th>Indicador</th><th>Mês/Ano</th><th>Resultado</th><th>Fato</th><th>Causa</th><th>Ação</th><th>Responsável</th><th>Status</th><th>Prazo</th></tr></thead>
+                  <tbody id="tableAcoes"><tr><td colspan="9" class="loading">Carregando...</td></tr></tbody>
                 </table>
               </div>
             </div>
@@ -415,7 +435,7 @@
     }
 
     function fillMonthSelects(){
-      ['histMes','acaoMes'].forEach(id => {
+      ['histMes'].forEach(id => {
         document.getElementById(id).innerHTML = MONTHS.map(m => `<option value="${m.value}">${m.label}</option>`).join('');
       });
     }
@@ -423,7 +443,6 @@
     function setCurrentYearDefaults(){
       const year = new Date().getFullYear();
       document.getElementById('histAno').value = year;
-      document.getElementById('acaoAno').value = year;
     }
 
     function showTab(tab){
@@ -489,7 +508,7 @@
     function renderAcoesTable(rows){
       const tbody = document.getElementById('tableAcoes');
       if (!rows.length){
-        tbody.innerHTML = `<tr><td colspan="6" class="empty">Nenhum plano de ação registrado.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="empty">Nenhum plano de ação registrado.</td></tr>`;
         return;
       }
       tbody.innerHTML = rows.map(r => `
@@ -497,9 +516,12 @@
           <td>${r.indicadorNome || '-'}</td>
           <td>${formatMonthYear(r.mes, r.ano)}</td>
           <td>${formatSmart(r.resultadoRef)}</td>
-          <td>${r.status || '-'}</td>
-          <td>${r.responsavel || '-'}</td>
+          <td>${r.fato || '-'}</td>
+          <td>${r.causa || '-'}</td>
           <td>${r.acoes || '-'}</td>
+          <td>${r.responsavel || '-'}</td>
+          <td>${r.status || '-'}</td>
+          <td>${r.prazo || '-'}</td>
         </tr>
       `).join('');
     }
@@ -648,7 +670,10 @@
           renderAcoesTable(data.recentActions || []);
           renderAppSummary(data);
           renderMetaBox(getSelectedIndicatorMeta());
-          if (data.initialized && data.indicators.length) loadDashboard();
+          if (data.initialized && data.indicators.length) {
+            loadDashboard();
+            loadAcaoPeriodo();
+          }
         })
         .withFailureHandler(err => {
           toast('Erro', err && err.message ? err.message : 'Falha ao carregar os dados.', 'error');
@@ -717,27 +742,115 @@
         .saveMonthlyRecord(payload);
     }
 
+    function renderAcaoLinha(row = {}, readOnly = false){
+      const mesOptions = MONTHS.map(m => `<option value="${m.value}" ${Number(row.mes) === Number(m.value) ? 'selected' : ''}>${m.label}</option>`).join('');
+      return `
+        <tr>
+          <td>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;min-width:180px">
+              <select class="acao-input" data-key="mes" ${readOnly ? 'disabled' : ''}>${mesOptions}</select>
+              <input class="acao-input" data-key="ano" type="number" value="${row.ano || new Date().getFullYear()}" ${readOnly ? 'disabled' : ''}>
+            </div>
+          </td>
+          <td><input class="acao-input" data-key="resultadoRef" type="number" step="0.0001" value="${row.resultadoRef || ''}" ${readOnly ? 'disabled' : ''}></td>
+          <td><textarea class="acao-input" data-key="fato" ${readOnly ? 'disabled' : ''}>${row.fato || ''}</textarea></td>
+          <td><textarea class="acao-input" data-key="causa" ${readOnly ? 'disabled' : ''}>${row.causa || ''}</textarea></td>
+          <td><textarea class="acao-input" data-key="acoes" ${readOnly ? 'disabled' : ''}>${row.acoes || ''}</textarea></td>
+          <td><input class="acao-input" data-key="responsavel" type="text" value="${row.responsavel || ''}" ${readOnly ? 'disabled' : ''}></td>
+          <td>
+            <select class="acao-input" data-key="status" ${readOnly ? 'disabled' : ''}>
+              <option value="ANDAMENTO" ${row.status === 'ANDAMENTO' ? 'selected' : ''}>ANDAMENTO</option>
+              <option value="CONCLUIDO" ${row.status === 'CONCLUIDO' ? 'selected' : ''}>CONCLUIDO</option>
+              <option value="PENDENTE" ${row.status === 'PENDENTE' || !row.status ? 'selected' : ''}>PENDENTE</option>
+            </select>
+          </td>
+          <td><input class="acao-input" data-key="prazo" type="date" value="${row.prazo || ''}" ${readOnly ? 'disabled' : ''}></td>
+          <td><button type="button" class="acao-remove" ${readOnly ? 'disabled' : ''}>Excluir</button></td>
+        </tr>
+      `;
+    }
+
+    function bindAcaoLinhaEvents(){
+      const tbody = document.getElementById('acaoLinhas');
+      tbody.querySelectorAll('.acao-remove').forEach(btn => {
+        btn.onclick = () => {
+          btn.closest('tr').remove();
+          if (!tbody.children.length) addAcaoLinha();
+        };
+      });
+    }
+
+    function addAcaoLinha(row = {}){
+      const tbody = document.getElementById('acaoLinhas');
+      const readOnly = document.getElementById('acaoModo').value === 'visualizacao';
+      if (tbody.querySelector('.loading')) tbody.innerHTML = '';
+      tbody.insertAdjacentHTML('beforeend', renderAcaoLinha(row, readOnly));
+      bindAcaoLinhaEvents();
+    }
+
+    function collectAcaoLinhas(){
+      const tbody = document.getElementById('acaoLinhas');
+      const rows = [...tbody.querySelectorAll('tr')].map(tr => {
+        const get = key => (tr.querySelector(`[data-key="${key}"]`)?.value || '').trim();
+        return {
+          mes: Number(get('mes')),
+          ano: Number(get('ano')),
+          resultadoRef: get('resultadoRef'),
+          fato: get('fato'),
+          causa: get('causa'),
+          acoes: get('acoes'),
+          responsavel: get('responsavel'),
+          status: get('status') || 'PENDENTE',
+          prazo: get('prazo')
+        };
+      });
+      return rows.filter(r => r.fato || r.causa || r.acoes || r.responsavel || r.prazo || r.resultadoRef);
+    }
+
+    function applyAcaoModo(){
+      const readOnly = document.getElementById('acaoModo').value === 'visualizacao';
+      document.querySelectorAll('#acaoLinhas .acao-input, #acaoLinhas .acao-remove').forEach(el => {
+        el.disabled = readOnly;
+      });
+      document.getElementById('btnAddLinhaAcao').disabled = readOnly;
+      document.querySelector('#formAcao button[type="submit"]').disabled = readOnly;
+    }
+
+    function loadAcaoPeriodo(){
+      const indicadorId = document.getElementById('acaoIndicador').value;
+      if (!indicadorId) return;
+
+      google.script.run
+        .withSuccessHandler(data => {
+          const tbody = document.getElementById('acaoLinhas');
+          tbody.innerHTML = '';
+          if ((data.items || []).length) {
+            data.items.forEach(item => addAcaoLinha(item));
+          } else {
+            addAcaoLinha();
+          }
+          applyAcaoModo();
+        })
+        .withFailureHandler(err => {
+          toast('Erro', err && err.message ? err.message : 'Falha ao carregar plano de ação.', 'error');
+        })
+        .getActionPlansByIndicator(indicadorId);
+    }
+
     function saveAcao(event){
       event.preventDefault();
+      if (document.getElementById('acaoModo').value === 'visualizacao') return;
+
       const payload = {
         indicadorId: document.getElementById('acaoIndicador').value,
-        ano: document.getElementById('acaoAno').value,
-        mes: document.getElementById('acaoMes').value,
-        resultadoRef: document.getElementById('acaoResultado').value,
-        fato: document.getElementById('acaoFato').value,
-        causa: document.getElementById('acaoCausa').value,
-        acoes: document.getElementById('acaoAcoes').value,
-        responsavel: document.getElementById('acaoResponsavel').value,
-        status: document.getElementById('acaoStatus').value
+        items: collectAcaoLinhas()
       };
 
       google.script.run
         .withSuccessHandler(msg => {
           toast('Concluído', msg, 'success');
-          document.getElementById('formAcao').reset();
-          setCurrentYearDefaults();
-          fillMonthSelects();
           loadAppData();
+          loadAcaoPeriodo();
         })
         .withFailureHandler(err => {
           toast('Erro', err && err.message ? err.message : 'Falha ao salvar plano de ação.', 'error');
@@ -764,8 +877,11 @@
       document.getElementById('formIndicador').addEventListener('submit', saveIndicator);
       document.getElementById('formLancamento').addEventListener('submit', saveLancamento);
       document.getElementById('formAcao').addEventListener('submit', saveAcao);
-
+      document.getElementById('btnAddLinhaAcao').addEventListener('click', () => addAcaoLinha());
+      document.getElementById('acaoModo').addEventListener('change', applyAcaoModo);
+      document.getElementById('acaoIndicador').addEventListener('change', loadAcaoPeriodo);
       loadAppData();
+      addAcaoLinha();
     });
   </script>
 </body>
