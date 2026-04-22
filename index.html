@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestão de Indicadores</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root{
+      --bg-1:#07111f;
+      --bg-2:#0b1730;
+      --bg-3:#101f43;
+      --glass:rgba(255,255,255,.10);
+      --glass-2:rgba(255,255,255,.06);
+      --glass-3:rgba(255,255,255,.16);
+      --line:rgba(255,255,255,.12);
+      --line-soft:rgba(255,255,255,.08);
+      --text:#eef4ff;
+      --muted:#9fb2d1;
+      --primary:#78a6ff;
+      --primary-2:#4f7cff;
+      --cyan:#5eead4;
+      --green:#4ade80;
+      --yellow:#fbbf24;
+      --red:#fb7185;
+      --shadow:0 24px 70px rgba(0,0,0,.32);
+      --blur:18px;
+      --radius-xl:28px;
+      --radius-lg:22px;
+      --radius-md:18px;
+      --radius-sm:14px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      color:var(--text);
+      font-family:Inter,Arial,Helvetica,sans-serif;
+      background:
+        radial-gradient(circle at 8% 12%, rgba(79,124,255,.28), transparent 22%),
+        radial-gradient(circle at 92% 18%, rgba(94,234,212,.18), transparent 18%),
+        radial-gradient(circle at 78% 84%, rgba(251,113,133,.14), transparent 16%),
+        linear-gradient(145deg, var(--bg-1) 0%, var(--bg-2) 45%, var(--bg-3) 100%);
+      overflow-x:hidden;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+      background-size:32px 32px;
+      mask-image:linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,.15));
+      pointer-events:none;
+    }
+
+    .shell{
+      min-height:100vh;
+      display:grid;
+      grid-template-columns: 280px 1fr;
+      gap:18px;
+      padding:18px;
+    }
+
+    .glass{
+      background:linear-gradient(180deg, var(--glass) 0%, var(--glass-2) 100%);
+      backdrop-filter:blur(var(--blur));
+      -webkit-backdrop-filter:blur(var(--blur));
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+    }
+
+    .sidebar{
+      border-radius:30px;
+      padding:20px 18px;
+      position:sticky;
+      top:18px;
+      height:calc(100vh - 36px);
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      padding:8px 6px 18px;
+      border-bottom:1px solid var(--line-soft);
+      margin-bottom:18px;
+    }
+
+    .brand-badge{
+      width:48px;
+      height:48px;
+      border-radius:16px;
+      display:grid;
+      place-items:center;
+      font-size:22px;
+      background:linear-gradient(135deg, rgba(120,166,255,.36), rgba(94,234,212,.22));
+      border:1px solid rgba(255,255,255,.16);
+    }
+
+    .brand h1{
+      margin:0;
+      font-size:1rem;
+      line-height:1.15;
+      letter-spacing:.02em;
+    }
+
+    .brand small{
+      display:block;
+      color:var(--muted);
+      margin-top:4px;
+      font-size:12px;
+    }
+
+    .nav{
+      display:grid;
+      gap:8px;
+    }
+
+    .nav-btn{
+      width:100%;
+      border:none;
+      cursor:pointer;
+      text-align:left;
+      padding:14px 16px;
+      border-radius:18px;
+      color:var(--text);
+      background:transparent;
+      font-weight:700;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      transition:.2s ease;
+    }
+
+    .nav-btn:hover{
+      background:rgba(255,255,255,.06);
+      transform:translateX(2px);
+    }
+
+    .nav-btn.active{
+      background:linear-gradient(135deg, rgba(120,166,255,.26), rgba(94,234,212,.12));
+      border:1px solid rgba(255,255,255,.12);
+    }
+
+    .nav-emoji{
+      width:34px;
+      height:34px;
+      border-radius:12px;
+      display:grid;
+      place-items:center;
+      background:rgba(255,255,255,.08);
+      font-size:16px;
+      flex:0 0 34px;
+    }
+
+    .sidebar-foot{
+      margin-top:auto;
+      border-top:1px solid var(--line-soft);
+      padding-top:16px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.55;
+    }
+
+    .content{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+
+    .hero{
+      border-radius:30px;
+      padding:22px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .hero::before,
+    .hero::after{
+      content:"";
+      position:absolute;
+      border-radius:50%;
+      filter:blur(18px);
+      opacity:.55;
+      pointer-events:none;
+    }
+
+    .hero::before{
+      width:260px;
+      height:260px;
+      right:-80px;
+      top:-70px;
+      background:radial-gradient(circle, rgba(120,166,255,.45), transparent 65%);
+    }
+
+    .hero::after{
+      width:220px;
+      height:220px;
+      left:-60px;
+      bottom:-70px;
+      background:radial-gradient(circle, rgba(94,234,212,.28), transparent 65%);
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      gap:16px;
+      align-items:flex-start;
+      position:relative;
+      z-index:1;
+    }
+
+    .hero h2{
+      margin:0;
+      font-size:clamp(1.7rem, 2.4vw, 2.8rem);
+      letter-spacing:-.03em;
+      line-height:1.03;
+      max-width:800px;
+    }
+
+    .hero p{
+      margin:10px 0 0;
+      color:var(--muted);
+      max-width:860px;
+      line-height:1.6;
+    }
+
+    .hero-actions{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .btn{
+      border:none;
+      border-radius:16px;
+      padding:12px 16px;
+      cursor:pointer;
+      font-weight:800;
+      color:#eaf1ff;
+      background:linear-gradient(135deg, rgba(120,166,255,.22), rgba(79,124,255,.32));
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+      transition:.18s ease;
+    }
+
+    .btn:hover{
+      transform:translateY(-1px);
+      filter:brightness(1.04);
+    }
+
+    .btn.secondary{
+      background:rgba(255,255,255,.08);
+    }
+
+    .btn.ghost{
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+    }
+
+    .panel{
+      display:none;
+    }
+
+    .panel.active{
+      display:block;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(12,1fr);
+      gap:18px;
+    }
+
+    .card{
+      grid-column:span 12;
+      border-radius:26px;
+      padding:18px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(180deg, rgba(255,255,255,.04), transparent 28%);
+      pointer-events:none;
+    }
+
+    .span-8{grid-column:span 8}
+    .span-6{grid-column:span 6}
+    .span-4{grid-column:span 4}
+    .span-3{grid-column:span 3}
+
+    .title{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:16px;
+      position:relative;
+      z-index:1;
+    }
+
+    .title h2,.title h3{
+      margin:0;
+      font-size:1.04rem;
+      letter-spacing:.01em;
+    }
+
+    .title small{
+      display:block;
+      color:var(--muted);
+      margin-top:6px;
+      line-height:1.45;
+    }
+
+    .kpis{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:14px;
+      position:relative;
+      z-index:1;
+    }
+
+    .kpi{
+      border-radius:22px;
+      padding:18px;
+      background:linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.04));
+      border:1px solid rgba(255,255,255,.12);
+      min-height:132px;
+    }
+
+    .kpi .label{
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:10px;
+    }
+
+    .kpi .value{
+      font-size:2rem;
+      font-weight:900;
+      letter-spacing:-.03em;
+      line-height:1;
+    }
+
+    .kpi .foot{
+      margin-top:10px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.45;
+    }
+
+    .field-grid{
+      display:grid;
+      grid-template-columns:repeat(12,1fr);
+      gap:12px;
+      position:relative;
+      z-index:1;
+    }
+
+    .field{
+      grid-column:span 12;
+    }
+
+    .field.span-6{grid-column:span 6}
+    .field.span-4{grid-column:span 4}
+    .field.span-3{grid-column:span 3}
+
+    .field label{
+      display:block;
+      margin-bottom:7px;
+      font-size:13px;
+      font-weight:700;
+      color:#d9e6ff;
+    }
+
+    .field input,
+    .field select,
+    .field textarea{
+      width:100%;
+      color:var(--text);
+      padding:13px 14px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.08);
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+      outline:none;
+      transition:.18s ease;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+    }
+
+    .field input::placeholder,
+    .field textarea::placeholder{
+      color:#aec2e5;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus{
+      border-color:rgba(120,166,255,.65);
+      box-shadow:0 0 0 4px rgba(120,166,255,.14);
+      background:rgba(255,255,255,.12);
+    }
+
+    .field textarea{
+      min-height:110px;
+      resize:vertical;
+    }
+
+    .table-wrap{
+      position:relative;
+      z-index:1;
+      overflow:auto;
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+    }
+
+    table{
+      width:100%;
+      min-width:920px;
+      border-collapse:collapse;
+    }
+
+    th,td{
+      padding:14px 16px;
+      text-align:left;
+      font-size:14px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      vertical-align:top;
+    }
+
+    th{
+      position:sticky;
+      top:0;
+      z-index:1;
+      color:#c6d6f1;
+      background:rgba(8,19,37,.86);
+      backdrop-filter:blur(14px);
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      font-size:11px;
+    }
+
+    tr:hover td{
+      background:rgba(255,255,255,.04);
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:9px 13px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:900;
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+    }
+
+    .success{background:rgba(74,222,128,.12);color:#9ef0b5}
+    .warning{background:rgba(251,191,36,.12);color:#ffd979}
+    .danger{background:rgba(251,113,133,.12);color:#ff9aad}
+
+    .setup-box{
+      padding:22px;
+      border-radius:24px;
+      border:1px dashed rgba(120,166,255,.42);
+      background:linear-gradient(180deg, rgba(120,166,255,.10), rgba(255,255,255,.04));
+      position:relative;
+      z-index:1;
+    }
+
+    .chip-row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin:12px 0 8px;
+    }
+
+    .chip{
+      padding:7px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:800;
+      color:#ddecff;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
+    }
+
+    .muted,
+    .mini{
+      color:var(--muted);
+      line-height:1.55;
+    }
+
+    .empty,.loading{
+      text-align:center;
+      color:var(--muted);
+      padding:26px;
+    }
+
+    canvas{
+      width:100% !important;
+      max-height:340px;
+      position:relative;
+      z-index:1;
+    }
+
+    @media (max-width:1180px){
+      .shell{
+        grid-template-columns:1fr;
+      }
+      .sidebar{
+        position:relative;
+        top:0;
+        height:auto;
+      }
+    }
+
+    @media (max-width:1040px){
+      .kpis{
+        grid-template-columns:repeat(2,1fr);
+      }
+      .span-8,.span-6,.span-4,.span-3{
+        grid-column:span 12;
+      }
+      .field.span-6,.field.span-4,.field.span-3{
+        grid-column:span 12;
+      }
+      .topbar{
+        flex-direction:column;
+      }
+      .hero-actions{
+        justify-content:flex-start;
+      }
+    }
+
+    @media (max-width:680px){
+      .shell{
+        padding:12px;
+      }
+      .hero,.card,.sidebar{
+        border-radius:22px;
+      }
+      .kpis{
+        grid-template-columns:1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar glass">
+      <div class="brand">
+        <div class="brand-badge">✦</div>
+        <div>
+          <h1>Indicadores App</h1>
+          <small>Web app com cara de produto</small>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-btn active" data-tab="dashboard"><span class="nav-emoji">📊</span>Dashboard</button>
+        <button class="nav-btn" data-tab="indicadores"><span class="nav-emoji">🧩</span>Indicadores</button>
+        <button class="nav-btn" data-tab="lancamentos"><span class="nav-emoji">🗓️</span>Lançamentos</button>
+        <button class="nav-btn" data-tab="acoes"><span class="nav-emoji">🛠️</span>Plano de ação</button>
+        <button class="nav-btn" data-tab="base"><span class="nav-emoji">🗂️</span>Estrutura</button>
+      </nav>
+
+      <div class="sidebar-foot">
+        Cria a base do zero, cadastra indicador, registra mês a mês e acompanha tudo em uma interface mais limpa, brilhando bonito ✨
+      </div>
+    </aside>
+
+    <main class="content">
+      <section class="hero glass">
+        <div class="topbar">
+          <div>
+            <h2>Gestão de indicadores com visual de app, não de planilha perdida no tempo.</h2>
+            <p>
+              Estrutura automática na planilha, cadastro de indicadores, histórico mensal, plano de ação e dashboard comparativo, agora com um front mais premium e mais vivo.
+            </p>
+          </div>
+          <div class="hero-actions">
+            <button class="btn secondary" id="btnSetup">Criar estrutura automática</button>
+            <button class="btn ghost" id="btnReload">Recarregar dados</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel active" id="panel-dashboard">
+        <div class="grid">
+          <div class="card glass" id="setupCard">
+            <div class="setup-box">
+              <div class="title">
+                <div>
+                  <h2>Primeiro passo</h2>
+                  <small>O sistema cria sozinho as abas necessárias para funcionar dentro da planilha.</small>
+                </div>
+              </div>
+              <div class="chip-row">
+                <span class="chip">CONFIG</span>
+                <span class="chip">LISTAS</span>
+                <span class="chip">INDICADORES</span>
+                <span class="chip">HISTORICO</span>
+                <span class="chip">PLANO_ACAO</span>
+              </div>
+              <p class="muted">Depois disso, o usuário preenche tudo pelo app. A planilha vira a base, não a interface.</p>
+            </div>
+          </div>
+
+          <div class="card glass">
+            <div class="title">
+              <div>
+                <h2>Resumo executivo</h2>
+                <small>Leitura rápida do ecossistema</small>
+              </div>
+              <div id="statusBadge"></div>
+            </div>
+            <div class="kpis">
+              <div class="kpi">
+                <div class="label">Indicadores ativos</div>
+                <div class="value" id="kpiIndicadores">0</div>
+                <div class="foot">Cadastrados e disponíveis</div>
+              </div>
+              <div class="kpi">
+                <div class="label">Lançamentos</div>
+                <div class="value" id="kpiLancamentos">0</div>
+                <div class="foot">Registros no histórico</div>
+              </div>
+              <div class="kpi">
+                <div class="label">Planos de ação</div>
+                <div class="value" id="kpiAcoes">0</div>
+                <div class="foot">Itens cadastrados</div>
+              </div>
+              <div class="kpi">
+                <div class="label">Ano do painel</div>
+                <div class="value" id="kpiAno">-</div>
+                <div class="foot">Filtro atual</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card glass">
+            <div class="field-grid">
+              <div class="field span-4">
+                <label>Indicador</label>
+                <select id="dashIndicator"></select>
+              </div>
+              <div class="field span-3">
+                <label>Ano principal</label>
+                <select id="dashYear"></select>
+              </div>
+              <div class="field span-3">
+                <label>Comparação</label>
+                <select id="dashCompare">
+                  <option value="1">1 ano anterior</option>
+                  <option value="2" selected>2 anos anteriores</option>
+                  <option value="3">3 anos anteriores</option>
+                </select>
+              </div>
+              <div class="field span-2">
+                <label>&nbsp;</label>
+                <button class="btn" id="btnRefreshDashboard" type="button">Atualizar</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card glass span-4">
+            <div class="title">
+              <div>
+                <h3>Meta do indicador</h3>
+                <small>Configuração e responsável</small>
+              </div>
+            </div>
+            <div class="mini" id="dashMetaText">Selecione um indicador.</div>
+            <div style="margin-top:16px" class="mini" id="dashOwnerText"></div>
+            <div style="margin-top:16px" class="mini" id="dashPolarityText"></div>
+          </div>
+
+          <div class="card glass span-8">
+            <div class="title">
+              <div>
+                <h3>Evolução mensal</h3>
+                <small>Resultado do ano versus meta</small>
+              </div>
+            </div>
+            <canvas id="mainChart"></canvas>
+          </div>
+
+          <div class="card glass">
+            <div class="title">
+              <div>
+                <h3>Comparativo anual</h3>
+                <small>Anos lado a lado</small>
+              </div>
+            </div>
+            <canvas id="compareChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-indicadores">
+        <div class="grid">
+          <div class="card glass span-6">
+            <div class="title">
+              <div>
+                <h2>Cadastrar indicador</h2>
+                <small>Entidade principal do sistema</small>
+              </div>
+            </div>
+            <form id="formIndicador" class="field-grid">
+              <div class="field span-6">
+                <label>Nome do indicador</label>
+                <input type="text" id="indNome" required placeholder="Ex.: Taxa de suspensão por falta de material">
+              </div>
+              <div class="field span-3">
+                <label>Meta numérica</label>
+                <input type="number" step="0.0001" id="indMetaValor" required placeholder="0.05">
+              </div>
+              <div class="field span-3">
+                <label>Polaridade</label>
+                <select id="indPolaridade">
+                  <option value="MENOR_MELHOR">MENOR_MELHOR</option>
+                  <option value="MAIOR_MELHOR">MAIOR_MELHOR</option>
+                </select>
+              </div>
+              <div class="field span-6">
+                <label>Responsável</label>
+                <input type="text" id="indResponsavel" placeholder="Nome do responsável">
+              </div>
+              <div class="field span-6">
+                <label>Meta descritiva</label>
+                <input type="text" id="indMetaDescricao" placeholder="Ex.: Manter taxa menor ou igual a 5%">
+              </div>
+              <div class="field">
+                <label>Descrição / contexto</label>
+                <textarea id="indDescricao" placeholder="Explique o indicador, fórmula, contexto e uso."></textarea>
+              </div>
+              <div class="field">
+                <button class="btn" type="submit">Salvar indicador</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card glass span-6">
+            <div class="title">
+              <div>
+                <h2>Indicadores cadastrados</h2>
+                <small>Base mestre</small>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Indicador</th>
+                    <th>Meta</th>
+                    <th>Polaridade</th>
+                    <th>Responsável</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="tableIndicadores">
+                  <tr><td colspan="6" class="loading">Carregando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-lancamentos">
+        <div class="grid">
+          <div class="card glass span-6">
+            <div class="title">
+              <div>
+                <h2>Lançamento mensal</h2>
+                <small>Alimenta a série histórica</small>
+              </div>
+            </div>
+            <form id="formLancamento" class="field-grid">
+              <div class="field span-6">
+                <label>Indicador</label>
+                <select id="histIndicador" required></select>
+              </div>
+              <div class="field span-3">
+                <label>Ano</label>
+                <input type="number" id="histAno" required>
+              </div>
+              <div class="field span-3">
+                <label>Mês</label>
+                <select id="histMes" required></select>
+              </div>
+              <div class="field span-3">
+                <label>Numerador</label>
+                <input type="number" step="0.0001" id="histNumerador" required>
+              </div>
+              <div class="field span-3">
+                <label>Denominador</label>
+                <input type="number" step="0.0001" id="histDenominador" required>
+              </div>
+              <div class="field span-6">
+                <label>Observação</label>
+                <input type="text" id="histObs" placeholder="Observação do mês">
+              </div>
+              <div class="field">
+                <button class="btn" type="submit">Salvar lançamento</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card glass span-6">
+            <div class="title">
+              <div>
+                <h2>Últimos lançamentos</h2>
+                <small>Histórico recente</small>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Indicador</th>
+                    <th>Ano</th>
+                    <th>Mês</th>
+                    <th>Numerador</th>
+                    <th>Denominador</th>
+                    <th>Resultado</th>
+                  </tr>
+                </thead>
+                <tbody id="tableHistorico">
+                  <tr><td colspan="6" class="loading">Carregando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-acoes">
+        <div class="grid">
+          <div class="card glass span-6">
+            <div class="title">
+              <div>
+                <h2>Registrar plano de ação</h2>
+                <small>Tratativa de resultado</small>
+              </div>
+            </div>
+            <form id="formAcao" class="field-grid">
+              <div class="field span-6">
+                <label>Indicador</label>
+                <select id="acaoIndicador" required></select>
+              </div>
+              <div class="field span-3">
+                <label>Ano</label>
+                <input type="number" id="acaoAno" required>
+              </div>
+              <div class="field span-3">
+                <label>Mês</label>
+                <select id="acaoMes" required></select>
+              </div>
+              <div class="field span-3">
+                <label>Resultado de referência</label>
+                <input type="number" step="0.0001" id="acaoResultado">
+              </div>
+              <div class="field span-3">
+                <label>Status</label>
+                <select id="acaoStatus">
+                  <option value="ANDAMENTO">ANDAMENTO</option>
+                  <option value="CONCLUIDO">CONCLUIDO</option>
+                  <option value="PENDENTE">PENDENTE</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Fato</label>
+                <textarea id="acaoFato"></textarea>
+              </div>
+              <div class="field">
+                <label>Causa</label>
+                <textarea id="acaoCausa"></textarea>
+              </div>
+              <div class="field">
+                <label>Ações</label>
+                <textarea id="acaoAcoes"></textarea>
+              </div>
+              <div class="field span-6">
+                <label>Responsável</label>
+                <input type="text" id="acaoResponsavel">
+              </div>
+              <div class="field span-6">
+                <label>&nbsp;</label>
+                <button class="btn" type="submit">Salvar plano de ação</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card glass span-6">
+            <div class="title">
+              <div>
+                <h2>Planos registrados</h2>
+                <small>Base de tratativa</small>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Indicador</th>
+                    <th>Mês/Ano</th>
+                    <th>Resultado</th>
+                    <th>Status</th>
+                    <th>Responsável</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tableAcoes">
+                  <tr><td colspan="6" class="loading">Carregando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-base">
+        <div class="grid">
+          <div class="card glass">
+            <div class="title">
+              <div>
+                <h2>Estrutura criada pelo app</h2>
+                <small>Abas e função de cada uma</small>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Aba</th>
+                    <th>Função</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>CONFIG</td><td>Configurações gerais, versão, inicialização e sequência de IDs.</td></tr>
+                  <tr><td>LISTAS</td><td>Meses, polaridade e status auxiliares para validações.</td></tr>
+                  <tr><td>INDICADORES</td><td>Cadastro mestre dos indicadores do sistema.</td></tr>
+                  <tr><td>HISTORICO</td><td>Série histórica mensal com resultado e mediana móvel.</td></tr>
+                  <tr><td>PLANO_ACAO</td><td>Registro de fato, causa, ação, responsável e status.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="muted" style="margin-top:14px">
+              A planilha fica como motor interno. A experiência do usuário acontece aqui no front.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    let appData = null;
+    let mainChart = null;
+    let compareChart = null;
+
+    const MONTHS = [
+      { value: 1, label: 'JAN' }, { value: 2, label: 'FEV' }, { value: 3, label: 'MAR' },
+      { value: 4, label: 'ABR' }, { value: 5, label: 'MAI' }, { value: 6, label: 'JUN' },
+      { value: 7, label: 'JUL' }, { value: 8, label: 'AGO' }, { value: 9, label: 'SET' },
+      { value: 10, label: 'OUT' }, { value: 11, label: 'NOV' }, { value: 12, label: 'DEZ' }
+    ];
+
+    function n(v){
+      const num = Number(v);
+      return isNaN(num) ? null : num;
+    }
+
+    function formatSmart(value){
+      if (value === null || value === undefined || value === '' || isNaN(Number(value))) return '-';
+      const num = Number(value);
+      if (Math.abs(num) <= 1) {
+        return (num * 100).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + '%';
+      }
+      return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatNumber(value, decimals = 2){
+      if (value === null || value === undefined || value === '' || isNaN(Number(value))) return '-';
+      return Number(value).toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    }
+
+    function monthLabel(month){
+      const found = MONTHS.find(m => Number(m.value) === Number(month));
+      return found ? found.label : '-';
+    }
+
+    function formatMonthYear(month, year){
+      return `${monthLabel(month)}/${year}`;
+    }
+
+    function setStatusBadge(text, css){
+      document.getElementById('statusBadge').innerHTML = `<span class="badge ${css}">${text}</span>`;
+    }
+
+    function fillMonthSelects(){
+      ['histMes','acaoMes'].forEach(id => {
+        const el = document.getElementById(id);
+        el.innerHTML = MONTHS.map(m => `<option value="${m.value}">${m.label}</option>`).join('');
+      });
+    }
+
+    function setCurrentYearDefaults(){
+      const year = new Date().getFullYear();
+      document.getElementById('histAno').value = year;
+      document.getElementById('acaoAno').value = year;
+    }
+
+    function showTab(tab){
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+      document.querySelectorAll('.panel').forEach(panel => panel.classList.toggle('active', panel.id === `panel-${tab}`));
+    }
+
+    function populateIndicatorSelects(indicators){
+      const html = indicators.length
+        ? indicators.map(ind => `<option value="${ind.id}">${ind.nome}</option>`).join('')
+        : '<option value="">Nenhum indicador cadastrado</option>';
+
+      ['dashIndicator','histIndicador','acaoIndicador'].forEach(id => {
+        document.getElementById(id).innerHTML = html;
+      });
+    }
+
+    function populateYearSelect(years){
+      const dashYear = document.getElementById('dashYear');
+      const selected = dashYear.value;
+      dashYear.innerHTML = years.length
+        ? years.map(y => `<option value="${y}">${y}</option>`).join('')
+        : `<option value="${new Date().getFullYear()}">${new Date().getFullYear()}</option>`;
+      if (selected) dashYear.value = selected;
+    }
+
+    function renderIndicadoresTable(indicators){
+      const tbody = document.getElementById('tableIndicadores');
+      if (!indicators.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">Nenhum indicador cadastrado.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = indicators.map(ind => `
+        <tr>
+          <td>${ind.id}</td>
+          <td>${ind.nome}</td>
+          <td>${formatSmart(ind.metaValor)}</td>
+          <td>${ind.polaridade}</td>
+          <td>${ind.responsavel || '-'}</td>
+          <td>${ind.ativo ? 'ATIVO' : 'INATIVO'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderHistoricoTable(rows){
+      const tbody = document.getElementById('tableHistorico');
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">Nenhum lançamento registrado.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.indicadorNome || '-'}</td>
+          <td>${r.ano}</td>
+          <td>${monthLabel(r.mes)}</td>
+          <td>${formatNumber(r.numerador, 0)}</td>
+          <td>${formatNumber(r.denominador, 0)}</td>
+          <td>${formatSmart(r.resultado)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderAcoesTable(rows){
+      const tbody = document.getElementById('tableAcoes');
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">Nenhum plano de ação registrado.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.indicadorNome || '-'}</td>
+          <td>${formatMonthYear(r.mes, r.ano)}</td>
+          <td>${formatSmart(r.resultadoRef)}</td>
+          <td>${r.status || '-'}</td>
+          <td>${r.responsavel || '-'}</td>
+          <td>${r.acoes || '-'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderAppSummary(data){
+      document.getElementById('kpiIndicadores').textContent = data.counts.indicadores;
+      document.getElementById('kpiLancamentos').textContent = data.counts.historico;
+      document.getElementById('kpiAcoes').textContent = data.counts.acoes;
+      document.getElementById('kpiAno').textContent = document.getElementById('dashYear').value || new Date().getFullYear();
+
+      const setupCard = document.getElementById('setupCard');
+      setupCard.style.display = data.initialized ? 'none' : 'block';
+
+      if (!data.initialized) {
+        setStatusBadge('Estrutura pendente', 'warning');
+      } else if (!data.indicators.length) {
+        setStatusBadge('Base criada, falta cadastrar indicador', 'warning');
+      } else {
+        setStatusBadge('Sistema pronto', 'success');
+      }
+    }
+
+    function getSelectedIndicatorMeta(){
+      const indicatorId = document.getElementById('dashIndicator').value;
+      return (appData.indicators || []).find(ind => String(ind.id) === String(indicatorId));
+    }
+
+    function renderMetaBox(indicator){
+      document.getElementById('dashMetaText').innerHTML = indicator
+        ? `<strong>${indicator.nome}</strong><br><span class="muted">${indicator.metaDescricao || 'Sem meta descritiva.'}</span><br><br><strong>Meta:</strong> ${formatSmart(indicator.metaValor)}`
+        : 'Selecione um indicador.';
+      document.getElementById('dashOwnerText').innerHTML = indicator
+        ? `<strong>Responsável:</strong> ${indicator.responsavel || '-'}`
+        : '';
+      document.getElementById('dashPolarityText').innerHTML = indicator
+        ? `<strong>Polaridade:</strong> ${indicator.polaridade}`
+        : '';
+    }
+
+    function buildMainChart(dashboard){
+      if (mainChart) mainChart.destroy();
+      mainChart = new Chart(document.getElementById('mainChart'), {
+        type: 'line',
+        data: {
+          labels: MONTHS.map(m => m.label),
+          datasets: [
+            {
+              label: 'Resultado',
+              data: dashboard.currentYearMonthly,
+              borderWidth: 3,
+              tension: .34,
+              fill: false
+            },
+            {
+              label: 'Meta',
+              data: MONTHS.map(() => dashboard.metaValor),
+              borderWidth: 2,
+              borderDash: [8,8],
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode:'index', intersect:false },
+          plugins: { legend: { position:'top', labels: { color:'#dce8ff' } } },
+          scales: {
+            x: { ticks: { color:'#a9bddc' }, grid: { color:'rgba(255,255,255,.06)' } },
+            y: { beginAtZero:true, ticks: { color:'#a9bddc' }, grid: { color:'rgba(255,255,255,.06)' } }
+          }
+        }
+      });
+    }
+
+    function buildCompareChart(dashboard){
+      if (compareChart) compareChart.destroy();
+      compareChart = new Chart(document.getElementById('compareChart'), {
+        type: 'line',
+        data: {
+          labels: MONTHS.map(m => m.label),
+          datasets: dashboard.compareSeries.map(s => ({
+            label: String(s.year),
+            data: s.values,
+            borderWidth: 2,
+            tension: .30
+          }))
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode:'index', intersect:false },
+          plugins: { legend: { position:'top', labels: { color:'#dce8ff' } } },
+          scales: {
+            x: { ticks: { color:'#a9bddc' }, grid: { color:'rgba(255,255,255,.06)' } },
+            y: { beginAtZero:true, ticks: { color:'#a9bddc' }, grid: { color:'rgba(255,255,255,.06)' } }
+          }
+        }
+      });
+    }
+
+    function loadDashboard(){
+      const indicatorId = document.getElementById('dashIndicator').value;
+      const year = Number(document.getElementById('dashYear').value || new Date().getFullYear());
+      const compareYears = Number(document.getElementById('dashCompare').value || 2);
+
+      const indicator = getSelectedIndicatorMeta();
+      renderMetaBox(indicator);
+      document.getElementById('kpiAno').textContent = year;
+
+      if (!indicatorId) {
+        if (mainChart) mainChart.destroy();
+        if (compareChart) compareChart.destroy();
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(dashboard => {
+          buildMainChart(dashboard);
+          buildCompareChart(dashboard);
+        })
+        .withFailureHandler(err => {
+          alert(err && err.message ? err.message : 'Erro ao montar dashboard.');
+        })
+        .getDashboardData(indicatorId, year, compareYears);
+    }
+
+    function loadAppData(){
+      google.script.run
+        .withSuccessHandler(data => {
+          appData = data;
+          populateIndicatorSelects(data.indicators || []);
+          populateYearSelect(data.availableYears || [new Date().getFullYear()]);
+          renderIndicadoresTable(data.indicators || []);
+          renderHistoricoTable(data.recentHistory || []);
+          renderAcoesTable(data.recentActions || []);
+          renderAppSummary(data);
+          renderMetaBox(getSelectedIndicatorMeta());
+          if (data.initialized && data.indicators.length) loadDashboard();
+        })
+        .withFailureHandler(err => {
+          alert(err && err.message ? err.message : 'Erro ao carregar o app.');
+        })
+        .getAppData();
+    }
+
+    function handleSetup(){
+      if (!confirm('O app vai criar automaticamente as abas CONFIG, LISTAS, INDICADORES, HISTORICO e PLANO_ACAO. Continuar?')) return;
+      google.script.run
+        .withSuccessHandler(msg => {
+          alert(msg);
+          loadAppData();
+        })
+        .withFailureHandler(err => {
+          alert(err && err.message ? err.message : 'Erro ao criar estrutura.');
+        })
+        .setupSystem();
+    }
+
+    function saveIndicator(event){
+      event.preventDefault();
+      const payload = {
+        nome: document.getElementById('indNome').value,
+        metaValor: document.getElementById('indMetaValor').value,
+        polaridade: document.getElementById('indPolaridade').value,
+        responsavel: document.getElementById('indResponsavel').value,
+        metaDescricao: document.getElementById('indMetaDescricao').value,
+        descricao: document.getElementById('indDescricao').value
+      };
+
+      google.script.run
+        .withSuccessHandler(msg => {
+          alert(msg);
+          document.getElementById('formIndicador').reset();
+          loadAppData();
+        })
+        .withFailureHandler(err => {
+          alert(err && err.message ? err.message : 'Erro ao salvar indicador.');
+        })
+        .saveIndicator(payload);
+    }
+
+    function saveLancamento(event){
+      event.preventDefault();
+      const payload = {
+        indicadorId: document.getElementById('histIndicador').value,
+        ano: document.getElementById('histAno').value,
+        mes: document.getElementById('histMes').value,
+        numerador: document.getElementById('histNumerador').value,
+        denominador: document.getElementById('histDenominador').value,
+        observacao: document.getElementById('histObs').value
+      };
+
+      google.script.run
+        .withSuccessHandler(msg => {
+          alert(msg);
+          document.getElementById('formLancamento').reset();
+          setCurrentYearDefaults();
+          fillMonthSelects();
+          loadAppData();
+        })
+        .withFailureHandler(err => {
+          alert(err && err.message ? err.message : 'Erro ao salvar lançamento.');
+        })
+        .saveMonthlyRecord(payload);
+    }
+
+    function saveAcao(event){
+      event.preventDefault();
+      const payload = {
+        indicadorId: document.getElementById('acaoIndicador').value,
+        ano: document.getElementById('acaoAno').value,
+        mes: document.getElementById('acaoMes').value,
+        resultadoRef: document.getElementById('acaoResultado').value,
+        fato: document.getElementById('acaoFato').value,
+        causa: document.getElementById('acaoCausa').value,
+        acoes: document.getElementById('acaoAcoes').value,
+        responsavel: document.getElementById('acaoResponsavel').value,
+        status: document.getElementById('acaoStatus').value
+      };
+
+      google.script.run
+        .withSuccessHandler(msg => {
+          alert(msg);
+          document.getElementById('formAcao').reset();
+          setCurrentYearDefaults();
+          fillMonthSelects();
+          loadAppData();
+        })
+        .withFailureHandler(err => {
+          alert(err && err.message ? err.message : 'Erro ao salvar plano de ação.');
+        })
+        .saveActionPlan(payload);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      fillMonthSelects();
+      setCurrentYearDefaults();
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => showTab(btn.dataset.tab));
+      });
+
+      document.getElementById('btnSetup').addEventListener('click', handleSetup);
+      document.getElementById('btnReload').addEventListener('click', loadAppData);
+      document.getElementById('btnRefreshDashboard').addEventListener('click', loadDashboard);
+
+      document.getElementById('dashIndicator').addEventListener('change', loadDashboard);
+      document.getElementById('dashYear').addEventListener('change', loadDashboard);
+      document.getElementById('dashCompare').addEventListener('change', loadDashboard);
+
+      document.getElementById('formIndicador').addEventListener('submit', saveIndicator);
+      document.getElementById('formLancamento').addEventListener('submit', saveLancamento);
+      document.getElementById('formAcao').addEventListener('submit', saveAcao);
+
+      loadAppData();
+    });
+  </script>
+</body>
+</html>
