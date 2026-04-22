@@ -175,26 +175,24 @@ function saveActionPlan(payload) {
   ensureSystemReady_();
 
   const indicadorId = sanitizeText_(payload.indicadorId);
-  const ano = toInt_(payload.ano);
-  const mes = toInt_(payload.mes);
-  const resultadoRef = toNumber_(payload.resultadoRef);
   const items = Array.isArray(payload.items) ? payload.items : [];
 
   if (!indicadorId) throw new Error('Selecione um indicador.');
-  if (!ano || ano < 2000 || ano > 2100) throw new Error('Ano inválido.');
-  if (!mes || mes < 1 || mes > 12) throw new Error('Mês inválido.');
 
   const sh = getSheet_(APP.SHEETS.PLANO_ACAO);
   ensureActionPlanSchema_(sh);
 
   const data = sh.getDataRange().getValues();
   for (let i = data.length - 1; i >= 1; i--) {
-    if (String(data[i][1]) === String(indicadorId) && Number(data[i][2]) === ano && Number(data[i][3]) === mes) {
+    if (String(data[i][1]) === String(indicadorId)) {
       sh.deleteRow(i + 1);
     }
   }
 
   items.forEach(item => {
+    const ano = toInt_(item.ano);
+    const mes = toInt_(item.mes);
+    const resultadoRef = toNumber_(item.resultadoRef);
     const fato = sanitizeText_(item.fato);
     const causa = sanitizeText_(item.causa);
     const acoes = sanitizeText_(item.acoes);
@@ -202,7 +200,9 @@ function saveActionPlan(payload) {
     const status = sanitizeText_(item.status) || 'PENDENTE';
     const prazo = sanitizeText_(item.prazo);
 
-    if (!fato && !causa && !acoes && !responsavel && !prazo) return;
+    if (!ano || ano < 2000 || ano > 2100) return;
+    if (!mes || mes < 1 || mes > 12) return;
+    if (!fato && !causa && !acoes && !responsavel && !prazo && resultadoRef === null) return;
 
     const id = getNextId_('NEXT_ACTION_ID');
     sh.appendRow([
@@ -401,27 +401,25 @@ function getActionPlans_() {
   }));
 }
 
-function getActionPlanByPeriod(indicatorId, year, month) {
+function getActionPlansByIndicator(indicatorId) {
   ensureSystemReady_();
 
   const indicadorId = sanitizeText_(indicatorId);
-  const ano = toInt_(year);
-  const mes = toInt_(month);
-
   if (!indicadorId) throw new Error('Selecione um indicador.');
-  if (!ano || ano < 2000 || ano > 2100) throw new Error('Ano inválido.');
-  if (!mes || mes < 1 || mes > 12) throw new Error('Mês inválido.');
 
-  const rows = getActionPlans_().filter(r =>
-    String(r.indicadorId) === String(indicadorId) && Number(r.ano) === ano && Number(r.mes) === mes
-  );
+  const rows = getActionPlans_()
+    .filter(r => String(r.indicadorId) === String(indicadorId))
+    .sort((a, b) => {
+      if (Number(b.ano) !== Number(a.ano)) return Number(b.ano) - Number(a.ano);
+      return Number(b.mes) - Number(a.mes);
+    });
 
   return {
     indicadorId,
-    ano,
-    mes,
-    resultadoRef: rows.length ? rows[0].resultadoRef : null,
     items: rows.map(r => ({
+      ano: r.ano,
+      mes: r.mes,
+      resultadoRef: r.resultadoRef,
       fato: r.fato || '',
       causa: r.causa || '',
       acoes: r.acoes || '',
