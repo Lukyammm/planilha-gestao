@@ -100,6 +100,13 @@
     .acao-input:disabled{background:#f3f6f8;color:#6e808f}
     .acao-remove{border:none;background:#ffe4e4;color:#b84a4a;padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:700}
     .acao-remove:disabled{opacity:.5;cursor:not-allowed}
+    .acao-add{border:none;background:#e5f4ec;color:#22784f;padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:700}
+    .acao-add:disabled{opacity:.5;cursor:not-allowed}
+    .acao-grupo-start td{border-top:2px solid #bdd6e6}
+    .acao-grupo-start:first-child td{border-top:none}
+    .acao-col-mes{min-width:200px}
+    .acao-col-texto textarea{min-height:120px}
+    .acao-controles{display:flex;flex-direction:column;gap:6px;min-width:110px}
     @media (max-width:1180px){.layout{grid-template-columns:1fr}.sidebar{position:relative;top:0;height:auto}}
     @media (max-width:1040px){.kpis{grid-template-columns:repeat(2,1fr)}.span-8,.span-6,.span-4{grid-column:span 12}.field.span-6,.field.span-4,.field.span-3,.field.span-2{grid-column:span 12}.topbar-head{flex-direction:column}.topbar-actions{justify-content:flex-start}}
     @media (max-width:680px){.layout{padding:12px}.kpis{grid-template-columns:1fr}.sidebar,.topbar,.card{border-radius:18px}}
@@ -337,7 +344,7 @@
                   </div>
                 </div>
 
-                <div class="field span-3"><button class="btn btn-secondary" id="btnAddLinhaAcao" type="button">+ Adicionar linha</button></div>
+                <div class="field span-3"><button class="btn btn-secondary" id="btnAddGrupoAcao" type="button">+ Adicionar mês</button></div>
                 <div class="field span-3"><button class="btn btn-fill" type="submit">Salvar plano de ação</button></div>
               </form>
             </div>
@@ -742,77 +749,127 @@
         .saveMonthlyRecord(payload);
     }
 
-    function renderAcaoLinha(row = {}, readOnly = false){
-      const mesOptions = MONTHS.map(m => `<option value="${m.value}" ${Number(row.mes) === Number(m.value) ? 'selected' : ''}>${m.label}</option>`).join('');
+    function renderAcaoLinhaGrupo(grupo = {}, linha = {}, readOnly = false, firstRow = false, rowSpan = 1){
+      const mesOptions = MONTHS.map(m => `<option value="${m.value}" ${Number(grupo.mes) === Number(m.value) ? 'selected' : ''}>${m.label}</option>`).join('');
+      const grupoCells = firstRow ? `
+        <td rowspan="${rowSpan}" class="acao-col-mes">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <select class="acao-input" data-key="mes" ${readOnly ? 'disabled' : ''}>${mesOptions}</select>
+            <input class="acao-input" data-key="ano" type="number" value="${grupo.ano || new Date().getFullYear()}" ${readOnly ? 'disabled' : ''}>
+          </div>
+        </td>
+        <td rowspan="${rowSpan}"><input class="acao-input" data-key="resultadoRef" type="number" step="0.0001" value="${grupo.resultadoRef || ''}" ${readOnly ? 'disabled' : ''}></td>
+        <td rowspan="${rowSpan}" class="acao-col-texto"><textarea class="acao-input" data-key="fato" ${readOnly ? 'disabled' : ''}>${grupo.fato || ''}</textarea></td>
+        <td rowspan="${rowSpan}" class="acao-col-texto"><textarea class="acao-input" data-key="causa" ${readOnly ? 'disabled' : ''}>${grupo.causa || ''}</textarea></td>
+      ` : '';
       return `
-        <tr>
-          <td>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;min-width:180px">
-              <select class="acao-input" data-key="mes" ${readOnly ? 'disabled' : ''}>${mesOptions}</select>
-              <input class="acao-input" data-key="ano" type="number" value="${row.ano || new Date().getFullYear()}" ${readOnly ? 'disabled' : ''}>
-            </div>
-          </td>
-          <td><input class="acao-input" data-key="resultadoRef" type="number" step="0.0001" value="${row.resultadoRef || ''}" ${readOnly ? 'disabled' : ''}></td>
-          <td><textarea class="acao-input" data-key="fato" ${readOnly ? 'disabled' : ''}>${row.fato || ''}</textarea></td>
-          <td><textarea class="acao-input" data-key="causa" ${readOnly ? 'disabled' : ''}>${row.causa || ''}</textarea></td>
-          <td><textarea class="acao-input" data-key="acoes" ${readOnly ? 'disabled' : ''}>${row.acoes || ''}</textarea></td>
-          <td><input class="acao-input" data-key="responsavel" type="text" value="${row.responsavel || ''}" ${readOnly ? 'disabled' : ''}></td>
+        <tr class="${firstRow ? 'acao-grupo-start' : ''}">
+          ${grupoCells}
+          <td><textarea class="acao-input" data-key="acoes" ${readOnly ? 'disabled' : ''}>${linha.acoes || ''}</textarea></td>
+          <td><input class="acao-input" data-key="responsavel" type="text" value="${linha.responsavel || ''}" ${readOnly ? 'disabled' : ''}></td>
           <td>
             <select class="acao-input" data-key="status" ${readOnly ? 'disabled' : ''}>
-              <option value="ANDAMENTO" ${row.status === 'ANDAMENTO' ? 'selected' : ''}>ANDAMENTO</option>
-              <option value="CONCLUIDO" ${row.status === 'CONCLUIDO' ? 'selected' : ''}>CONCLUIDO</option>
-              <option value="PENDENTE" ${row.status === 'PENDENTE' || !row.status ? 'selected' : ''}>PENDENTE</option>
+              <option value="ANDAMENTO" ${linha.status === 'ANDAMENTO' ? 'selected' : ''}>ANDAMENTO</option>
+              <option value="CONCLUIDO" ${linha.status === 'CONCLUIDO' ? 'selected' : ''}>CONCLUIDO</option>
+              <option value="PENDENTE" ${linha.status === 'PENDENTE' || !linha.status ? 'selected' : ''}>PENDENTE</option>
             </select>
           </td>
-          <td><input class="acao-input" data-key="prazo" type="date" value="${row.prazo || ''}" ${readOnly ? 'disabled' : ''}></td>
-          <td><button type="button" class="acao-remove" ${readOnly ? 'disabled' : ''}>Excluir</button></td>
+          <td><input class="acao-input" data-key="prazo" type="date" value="${linha.prazo || ''}" ${readOnly ? 'disabled' : ''}></td>
+          <td>
+            <div class="acao-controles">
+              <button type="button" class="acao-add acao-add-line" ${readOnly ? 'disabled' : ''}>+ Linha</button>
+              <button type="button" class="acao-remove acao-remove-line" ${readOnly ? 'disabled' : ''}>Excluir linha</button>
+              ${firstRow ? `<button type="button" class="acao-remove acao-remove-group" ${readOnly ? 'disabled' : ''}>Excluir mês</button>` : ''}
+            </div>
+          </td>
         </tr>
       `;
     }
 
-    function bindAcaoLinhaEvents(){
-      const tbody = document.getElementById('acaoLinhas');
-      tbody.querySelectorAll('.acao-remove').forEach(btn => {
-        btn.onclick = () => {
-          btn.closest('tr').remove();
-          if (!tbody.children.length) addAcaoLinha();
-        };
+    function groupActionItems(items){
+      const groups = new Map();
+      (items || []).forEach(item => {
+        const ano = Number(item.ano) || new Date().getFullYear();
+        const mes = Number(item.mes) || 1;
+        const key = `${ano}-${mes}`;
+        if (!groups.has(key)) {
+          groups.set(key, {
+            ano,
+            mes,
+            resultadoRef: item.resultadoRef || '',
+            fato: item.fato || '',
+            causa: item.causa || '',
+            linhas: []
+          });
+        }
+        const group = groups.get(key);
+        if (!group.resultadoRef && item.resultadoRef) group.resultadoRef = item.resultadoRef;
+        if (!group.fato && item.fato) group.fato = item.fato;
+        if (!group.causa && item.causa) group.causa = item.causa;
+        group.linhas.push({
+          acoes: item.acoes || '',
+          responsavel: item.responsavel || '',
+          status: item.status || 'PENDENTE',
+          prazo: item.prazo || ''
+        });
       });
+      return [...groups.values()].sort((a, b) => Number(b.ano) - Number(a.ano) || Number(b.mes) - Number(a.mes));
     }
 
-    function addAcaoLinha(row = {}){
-      const tbody = document.getElementById('acaoLinhas');
+    function renderAcaoGrupo(grupo = {}){
       const readOnly = document.getElementById('acaoModo').value === 'visualizacao';
-      if (tbody.querySelector('.loading')) tbody.innerHTML = '';
-      tbody.insertAdjacentHTML('beforeend', renderAcaoLinha(row, readOnly));
-      bindAcaoLinhaEvents();
+      const groupId = `g-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+      const linhas = (grupo.linhas && grupo.linhas.length) ? grupo.linhas : [{ status: 'PENDENTE' }];
+      const html = linhas.map((linha, idx) => renderAcaoLinhaGrupo(grupo, linha, readOnly, idx === 0, linhas.length)).join('');
+      return `<tbody class="acao-grupo" data-group-id="${groupId}">${html}</tbody>`;
+    }
+
+    function addAcaoGrupo(grupo = {}){
+      const table = document.querySelector('#acaoLinhas').closest('table');
+      const body = table.querySelector('tbody#acaoLinhas');
+      if (body && body.querySelector('.loading')) body.remove();
+      table.insertAdjacentHTML('beforeend', renderAcaoGrupo(grupo));
     }
 
     function collectAcaoLinhas(){
-      const tbody = document.getElementById('acaoLinhas');
-      const rows = [...tbody.querySelectorAll('tr')].map(tr => {
-        const get = key => (tr.querySelector(`[data-key="${key}"]`)?.value || '').trim();
-        return {
-          mes: Number(get('mes')),
-          ano: Number(get('ano')),
-          resultadoRef: get('resultadoRef'),
-          fato: get('fato'),
-          causa: get('causa'),
-          acoes: get('acoes'),
-          responsavel: get('responsavel'),
-          status: get('status') || 'PENDENTE',
-          prazo: get('prazo')
+      const grupos = [...document.querySelectorAll('.acao-grupo')];
+      const items = [];
+      grupos.forEach(grupoEl => {
+        const getGroup = key => (grupoEl.querySelector(`[data-key="${key}"]`)?.value || '').trim();
+        const grupo = {
+          mes: Number(getGroup('mes')),
+          ano: Number(getGroup('ano')),
+          resultadoRef: getGroup('resultadoRef'),
+          fato: getGroup('fato'),
+          causa: getGroup('causa')
         };
+        grupoEl.querySelectorAll('tr').forEach(tr => {
+          const get = key => (tr.querySelector(`[data-key="${key}"]`)?.value || '').trim();
+          const item = {
+            mes: grupo.mes,
+            ano: grupo.ano,
+            resultadoRef: grupo.resultadoRef,
+            fato: grupo.fato,
+            causa: grupo.causa,
+            acoes: get('acoes'),
+            responsavel: get('responsavel'),
+            status: get('status') || 'PENDENTE',
+            prazo: get('prazo')
+          };
+          if (item.fato || item.causa || item.acoes || item.responsavel || item.prazo || item.resultadoRef) {
+            items.push(item);
+          }
+        });
       });
-      return rows.filter(r => r.fato || r.causa || r.acoes || r.responsavel || r.prazo || r.resultadoRef);
+      return items;
     }
 
     function applyAcaoModo(){
       const readOnly = document.getElementById('acaoModo').value === 'visualizacao';
-      document.querySelectorAll('#acaoLinhas .acao-input, #acaoLinhas .acao-remove').forEach(el => {
+      document.querySelectorAll('.acao-grupo .acao-input, .acao-grupo .acao-remove, .acao-grupo .acao-add').forEach(el => {
         el.disabled = readOnly;
       });
-      document.getElementById('btnAddLinhaAcao').disabled = readOnly;
+      document.getElementById('btnAddGrupoAcao').disabled = readOnly;
       document.querySelector('#formAcao button[type="submit"]').disabled = readOnly;
     }
 
@@ -822,12 +879,14 @@
 
       google.script.run
         .withSuccessHandler(data => {
-          const tbody = document.getElementById('acaoLinhas');
+          const table = document.querySelector('#acaoLinhas').closest('table');
+          table.querySelectorAll('.acao-grupo').forEach(el => el.remove());
+          const tbody = table.querySelector('#acaoLinhas');
           tbody.innerHTML = '';
           if ((data.items || []).length) {
-            data.items.forEach(item => addAcaoLinha(item));
+            groupActionItems(data.items).forEach(grupo => addAcaoGrupo(grupo));
           } else {
-            addAcaoLinha();
+            addAcaoGrupo();
           }
           applyAcaoModo();
         })
@@ -877,11 +936,63 @@
       document.getElementById('formIndicador').addEventListener('submit', saveIndicator);
       document.getElementById('formLancamento').addEventListener('submit', saveLancamento);
       document.getElementById('formAcao').addEventListener('submit', saveAcao);
-      document.getElementById('btnAddLinhaAcao').addEventListener('click', () => addAcaoLinha());
+      document.getElementById('btnAddGrupoAcao').addEventListener('click', () => addAcaoGrupo());
       document.getElementById('acaoModo').addEventListener('change', applyAcaoModo);
       document.getElementById('acaoIndicador').addEventListener('change', loadAcaoPeriodo);
+      document.querySelector('#acaoLinhas').closest('table').addEventListener('click', event => {
+        const groupEl = event.target.closest('.acao-grupo');
+        if (!groupEl) return;
+        if (event.target.classList.contains('acao-add-line')) {
+          const readOnly = document.getElementById('acaoModo').value === 'visualizacao';
+          if (readOnly) return;
+          const groupData = {
+            ano: groupEl.querySelector('[data-key="ano"]')?.value,
+            mes: groupEl.querySelector('[data-key="mes"]')?.value,
+            resultadoRef: groupEl.querySelector('[data-key="resultadoRef"]')?.value,
+            fato: groupEl.querySelector('[data-key="fato"]')?.value,
+            causa: groupEl.querySelector('[data-key="causa"]')?.value,
+            linhas: [...groupEl.querySelectorAll('tr')].map(tr => ({
+              acoes: tr.querySelector('[data-key="acoes"]')?.value || '',
+              responsavel: tr.querySelector('[data-key="responsavel"]')?.value || '',
+              status: tr.querySelector('[data-key="status"]')?.value || 'PENDENTE',
+              prazo: tr.querySelector('[data-key="prazo"]')?.value || ''
+            }))
+          };
+          groupData.linhas.push({ status: 'PENDENTE' });
+          groupEl.outerHTML = renderAcaoGrupo(groupData);
+          applyAcaoModo();
+        }
+        if (event.target.classList.contains('acao-remove-line')) {
+          const readOnly = document.getElementById('acaoModo').value === 'visualizacao';
+          if (readOnly) return;
+          const rows = groupEl.querySelectorAll('tr');
+          if (rows.length <= 1) return;
+          event.target.closest('tr').remove();
+          const groupData = {
+            ano: groupEl.querySelector('[data-key="ano"]')?.value,
+            mes: groupEl.querySelector('[data-key="mes"]')?.value,
+            resultadoRef: groupEl.querySelector('[data-key="resultadoRef"]')?.value,
+            fato: groupEl.querySelector('[data-key="fato"]')?.value,
+            causa: groupEl.querySelector('[data-key="causa"]')?.value,
+            linhas: [...groupEl.querySelectorAll('tr')].map(tr => ({
+              acoes: tr.querySelector('[data-key="acoes"]')?.value || '',
+              responsavel: tr.querySelector('[data-key="responsavel"]')?.value || '',
+              status: tr.querySelector('[data-key="status"]')?.value || 'PENDENTE',
+              prazo: tr.querySelector('[data-key="prazo"]')?.value || ''
+            }))
+          };
+          groupEl.outerHTML = renderAcaoGrupo(groupData);
+          applyAcaoModo();
+        }
+        if (event.target.classList.contains('acao-remove-group')) {
+          const readOnly = document.getElementById('acaoModo').value === 'visualizacao';
+          if (readOnly) return;
+          groupEl.remove();
+          if (!document.querySelector('.acao-grupo')) addAcaoGrupo();
+        }
+      });
       loadAppData();
-      addAcaoLinha();
+      addAcaoGrupo();
     });
   </script>
 </body>
