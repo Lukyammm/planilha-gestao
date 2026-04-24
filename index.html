@@ -100,21 +100,19 @@
     .acao-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
     .acao-toolbar .hint{font-size:12px;color:var(--muted)}
     .acao-board{
-      --col-my:120px;--col-res:100px;--col-fato:2.7fr;--col-causa:2.6fr;--col-acao:2.5fr;--col-resp:170px;--col-status:130px;--col-prazo:130px;--col-ctrl:120px;
+      --col-my:105px;--col-res:95px;--col-fato:2.9fr;--col-causa:2.8fr;--col-acao:2.8fr;--col-resp:185px;--col-status:110px;--col-prazo:110px;
       border:1px solid var(--line);
       border-radius:16px;
       background:#fff;
       overflow:hidden
     }
-    .acao-head,.acao-row{display:grid;grid-template-columns:var(--col-my) var(--col-res) var(--col-fato) var(--col-causa) var(--col-acao) var(--col-resp) var(--col-status) var(--col-prazo) var(--col-ctrl)}
+    .acao-head,.acao-row{display:grid;grid-template-columns:var(--col-my) var(--col-res) var(--col-fato) var(--col-causa) var(--col-acao) var(--col-resp) var(--col-status) var(--col-prazo)}
     .acao-head{background:#eef6fb;border-bottom:1px solid var(--line)}
     .acao-hcell{padding:11px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;color:#0a5f90;position:relative}
     .resize-handle{position:absolute;top:0;right:-4px;width:12px;height:100%;cursor:col-resize}
     .acao-body{padding:10px;display:grid;gap:10px;background:linear-gradient(180deg,#fff 0%, #f9fcfe 100%)}
     .acao-group{border:1px solid #d9e9f3;border-radius:14px;overflow:hidden;background:#fff}
-    .acao-group-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:#f2f8fc;border-bottom:1px solid #dfecf5}
-    .acao-group-title{font-size:12px;font-weight:700;color:#24506a}
-    .acao-group-meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;max-width:440px;width:100%}
+    .acao-group + .acao-group{margin-top:8px}
     .acao-input{width:100%;padding:10px 11px;border-radius:10px;border:1px solid var(--line-strong);background:#fff;color:var(--text);font:inherit}
     .acao-input:disabled{background:#f3f6f8;color:#6e808f}
     .acao-input.acao-area{resize:vertical;min-height:44px;line-height:1.5;overflow:hidden}
@@ -126,6 +124,8 @@
     .acao-row.level-2{background:#fff;border-color:#e4edf4}
     .acao-cell{padding:10px;border-right:1px solid #edf3f7}
     .acao-cell:last-child{border-right:none}
+    .group-cell{background:#f4f9fd}
+    .group-cell.group-meta{display:grid;align-content:start;gap:8px}
     .tree-main{position:relative}
     .tree-main::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:999px;background:#c6dceb}
     .level-0 .tree-main{padding-left:10px}
@@ -139,9 +139,9 @@
     .tag-causa{background:#e9f4fb;color:#1a5f86}
     .tag-acao{background:#f1f8fd;color:#2b5f7f}
     .acao-empty{font-size:13px;color:#6c8090;padding:14px;text-align:center}
-    .acao-ctrl{display:flex;flex-direction:column;gap:6px}
-    .acao-add{border:none;background:#e5f4ec;color:#22784f;padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:700}
-    .acao-remove{border:none;background:#ffe4e4;color:#b84a4a;padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:700}
+    .acao-ctrl{display:flex;gap:6px;flex-wrap:wrap}
+    .acao-add{border:none;background:#e5f4ec;color:#22784f;padding:7px 9px;border-radius:10px;cursor:pointer;font-weight:700;font-size:12px}
+    .acao-remove{border:none;background:#ffe4e4;color:#b84a4a;padding:7px 9px;border-radius:10px;cursor:pointer;font-weight:700;font-size:12px}
     .acao-add:disabled,.acao-remove:disabled{opacity:.5;cursor:not-allowed}
     @media (max-width:1180px){.layout{grid-template-columns:1fr}.sidebar{position:relative;top:0;height:auto}}
     @media (max-width:1040px){.kpis{grid-template-columns:repeat(2,1fr)}.span-8,.span-6,.span-4{grid-column:span 12}.field.span-6,.field.span-4,.field.span-3,.field.span-2{grid-column:span 12}.topbar-head{flex-direction:column}.topbar-actions{justify-content:flex-start}}
@@ -368,20 +368,19 @@
                       <div class="acao-head">
                         <div class="acao-hcell">Mês / Ano</div>
                         <div class="acao-hcell">Resultado</div>
-                        <div class="acao-hcell">Fato <span class="resize-handle" data-col="fato"></span></div>
+                        <div class="acao-hcell">Fato (o que aconteceu?) <span class="resize-handle" data-col="fato"></span></div>
                         <div class="acao-hcell">Causa <span class="resize-handle" data-col="causa"></span></div>
-                        <div class="acao-hcell">Ação <span class="resize-handle" data-col="acao"></span></div>
+                        <div class="acao-hcell">Ação (o que precisa ser feito?) <span class="resize-handle" data-col="acao"></span></div>
                         <div class="acao-hcell">Responsável</div>
                         <div class="acao-hcell">Status</div>
                         <div class="acao-hcell">Prazo</div>
-                        <div class="acao-hcell">Controle</div>
                       </div>
                       <div class="acao-body" id="acaoLinhas"><div class="acao-empty">Carregando...</div></div>
                     </div>
                   </div>
                 </div>
 
-                <div class="field span-3"><button class="btn btn-secondary" id="btnAddGrupoAcao" type="button">+ Fato</button></div>
+                <div class="field span-3"><button class="btn btn-secondary" id="btnAddGrupoAcao" type="button">+ Novo bloco Mês/Ano</button></div>
                 <div class="field span-3"><button class="btn btn-fill" type="submit">Salvar plano de ação</button></div>
               </form>
             </div>
@@ -842,13 +841,22 @@
       const tagClass = isFato ? 'tag-fato' : isCausa ? 'tag-causa' : 'tag-acao';
       const tagText = isFato ? 'Fato' : isCausa ? 'Causa' : 'Ação';
       const statusValue = content.status || 'PENDENTE';
+      const controls = `
+        <div class="acao-ctrl">
+          ${isFato ? `<button type="button" class="acao-add" data-action="add-causa" ${readOnly ? 'disabled' : ''}>+ Causa</button>` : ''}
+          ${isCausa ? `<button type="button" class="acao-add" data-action="add-acao" ${readOnly ? 'disabled' : ''}>+ Ação</button>` : ''}
+          ${isFato ? `<button type="button" class="acao-remove" data-action="remove-fato" ${readOnly ? 'disabled' : ''}>Excluir</button>` : ''}
+          ${isCausa ? `<button type="button" class="acao-remove" data-action="remove-causa" ${readOnly ? 'disabled' : ''}>Excluir</button>` : ''}
+          ${isAcao ? `<button type="button" class="acao-remove" data-action="remove-acao" ${readOnly ? 'disabled' : ''}>Excluir</button>` : ''}
+        </div>
+      `;
       return `
         <div class="acao-row level-${level}" data-level="${level}" data-id="${content.id}" data-parent-id="${content.parentId || ''}">
           <div class="acao-cell"></div>
           <div class="acao-cell"></div>
-          <div class="acao-cell tree-main">${isFato ? `<span class="acao-tag ${tagClass}">${tagText}</span><textarea class="acao-input acao-area" data-key="fato" ${readOnly ? 'disabled' : ''}>${content.texto || ''}</textarea>` : ''}</div>
-          <div class="acao-cell tree-main">${isCausa ? `<span class="acao-tag ${tagClass}">${tagText}</span><textarea class="acao-input acao-area" data-key="causa" ${readOnly ? 'disabled' : ''}>${content.texto || ''}</textarea>` : ''}</div>
-          <div class="acao-cell tree-main">${isAcao ? `<span class="acao-tag ${tagClass}">${tagText}</span><textarea class="acao-input acao-area" data-key="acoes" ${readOnly ? 'disabled' : ''}>${content.texto || ''}</textarea>` : ''}</div>
+          <div class="acao-cell tree-main">${isFato ? `<span class="acao-tag ${tagClass}">${tagText}</span><textarea class="acao-input acao-area" data-key="fato" ${readOnly ? 'disabled' : ''}>${content.texto || ''}</textarea>${controls}` : ''}</div>
+          <div class="acao-cell tree-main">${isCausa ? `<span class="acao-tag ${tagClass}">${tagText}</span><textarea class="acao-input acao-area" data-key="causa" ${readOnly ? 'disabled' : ''}>${content.texto || ''}</textarea>${controls}` : ''}</div>
+          <div class="acao-cell tree-main">${isAcao ? `<span class="acao-tag ${tagClass}">${tagText}</span><textarea class="acao-input acao-area" data-key="acoes" ${readOnly ? 'disabled' : ''}>${content.texto || ''}</textarea>${controls}` : ''}</div>
           <div class="acao-cell">${isAcao ? `<input class="acao-input" data-key="responsavel" type="text" value="${content.responsavel || ''}" ${readOnly ? 'disabled' : ''}>` : ''}</div>
           <div class="acao-cell">${isAcao ? `<select class="acao-input" data-key="status" ${readOnly ? 'disabled' : ''}>
                 <option value="ANDAMENTO" ${statusValue === 'ANDAMENTO' ? 'selected' : ''}>ANDAMENTO</option>
@@ -856,21 +864,13 @@
                 <option value="PENDENTE" ${statusValue === 'PENDENTE' ? 'selected' : ''}>PENDENTE</option>
               </select>` : ''}</div>
           <div class="acao-cell">${isAcao ? `<input class="acao-input" data-key="prazo" type="date" value="${content.prazo || ''}" ${readOnly ? 'disabled' : ''}>` : ''}</div>
-          <div class="acao-cell">
-            <div class="acao-ctrl">
-              ${isFato ? `<button type="button" class="acao-add" data-action="add-causa" ${readOnly ? 'disabled' : ''}>+ Causa</button>` : ''}
-              ${isCausa ? `<button type="button" class="acao-add" data-action="add-acao" ${readOnly ? 'disabled' : ''}>+ Ação</button>` : ''}
-              ${isFato ? `<button type="button" class="acao-remove" data-action="remove-fato" ${readOnly ? 'disabled' : ''}>Excluir</button>` : ''}
-              ${isCausa ? `<button type="button" class="acao-remove" data-action="remove-causa" ${readOnly ? 'disabled' : ''}>Excluir</button>` : ''}
-              ${isAcao ? `<button type="button" class="acao-remove" data-action="remove-acao" ${readOnly ? 'disabled' : ''}>Excluir</button>` : ''}
-            </div>
-          </div>
         </div>
       `;
     }
 
     function renderAcaoGrupo(grupo = {}){
       const readOnly = document.getElementById('acaoModo').value === 'visualizacao';
+      const mesAno = `${monthLabel(grupo.mes || 1)}/${grupo.ano || new Date().getFullYear()}`;
       const mesOptions = MONTHS.map(m => `<option value="${m.value}" ${Number(grupo.mes) === Number(m.value) ? 'selected' : ''}>${m.label}</option>`).join('');
       let treeHtml = '';
       (grupo.fatos || []).forEach(fato => {
@@ -884,17 +884,25 @@
       });
       return `
         <section class="acao-group" data-group-id="${grupo.id || uid('grp')}">
-          <div class="acao-group-head">
-            <div class="acao-group-title">Período de análise</div>
-            <div class="acao-group-meta">
+          <div class="acao-row">
+            <div class="acao-cell group-cell group-meta">
+              <strong>${mesAno}</strong>
               <select class="acao-input" data-group-key="mes" ${readOnly ? 'disabled' : ''}>${mesOptions}</select>
               <input class="acao-input" data-group-key="ano" type="number" value="${grupo.ano || new Date().getFullYear()}" ${readOnly ? 'disabled' : ''}>
-              <input class="acao-input" data-group-key="resultadoRef" type="number" step="0.0001" placeholder="Resultado ref." value="${grupo.resultadoRef || ''}" ${readOnly ? 'disabled' : ''}>
+              <div class="acao-ctrl">
+                <button type="button" class="acao-add" data-action="add-fato" ${readOnly ? 'disabled' : ''}>+ Fato</button>
+                <button type="button" class="acao-remove" data-action="remove-grupo" ${readOnly ? 'disabled' : ''}>Excluir bloco</button>
+              </div>
             </div>
-            <div class="acao-ctrl">
-              <button type="button" class="acao-add" data-action="add-fato" ${readOnly ? 'disabled' : ''}>+ Fato</button>
-              <button type="button" class="acao-remove" data-action="remove-grupo" ${readOnly ? 'disabled' : ''}>Excluir período</button>
+            <div class="acao-cell group-cell">
+              <input class="acao-input" data-group-key="resultadoRef" type="number" step="0.0001" placeholder="Resultado" value="${grupo.resultadoRef || ''}" ${readOnly ? 'disabled' : ''}>
             </div>
+            <div class="acao-cell"></div>
+            <div class="acao-cell"></div>
+            <div class="acao-cell"></div>
+            <div class="acao-cell"></div>
+            <div class="acao-cell"></div>
+            <div class="acao-cell"></div>
           </div>
           <div class="acao-tree">${treeHtml || '<div class="acao-empty">Sem itens neste período. Clique em + Fato.</div>'}</div>
         </section>
@@ -948,6 +956,13 @@
         });
       });
       return items.filter(item => item.acoes || item.causa || item.fato || item.resultadoRef);
+    }
+
+    function updateGroupLabel(groupEl){
+      const mes = Number(groupEl.querySelector('[data-group-key="mes"]')?.value || 1);
+      const ano = Number(groupEl.querySelector('[data-group-key="ano"]')?.value || new Date().getFullYear());
+      const labelEl = groupEl.querySelector('.group-meta strong');
+      if (labelEl) labelEl.textContent = `${monthLabel(mes)}/${ano}`;
     }
 
     function applyAcaoModo(){
@@ -1031,6 +1046,10 @@
       document.getElementById('acaoIndicador').addEventListener('change', loadAcaoPeriodo);
       document.getElementById('acaoLinhas').addEventListener('input', event => {
         if (event.target.classList.contains('acao-area')) autoResizeAllTextareas();
+        if (event.target.dataset.groupKey === 'mes' || event.target.dataset.groupKey === 'ano') {
+          const groupEl = event.target.closest('.acao-group');
+          if (groupEl) updateGroupLabel(groupEl);
+        }
       });
       document.getElementById('acaoLinhas').addEventListener('click', event => {
         const groupEl = event.target.closest('.acao-group');
@@ -1081,6 +1100,12 @@
           if (empty) empty.remove();
         }
         autoResizeAllTextareas();
+      });
+      document.getElementById('acaoLinhas').addEventListener('change', event => {
+        if (event.target.dataset.groupKey === 'mes' || event.target.dataset.groupKey === 'ano') {
+          const groupEl = event.target.closest('.acao-group');
+          if (groupEl) updateGroupLabel(groupEl);
+        }
       });
 
       document.querySelectorAll('.resize-handle').forEach(handle => {
